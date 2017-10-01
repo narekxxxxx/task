@@ -5,9 +5,10 @@ namespace AppBundle\Repository;
 use Doctrine\ORM\EntityRepository;
 use Symfony\Component\HttpFoundation\Request;
 
+
 class TrackRepository extends EntityRepository
 {
-    public function getAllTracks(Request $request, $pageSize)
+    public function getAllTracks(Request $request, $pageSize, $sort, $direction)
     {
         $searchMap = [
             'genre' => 'g.name',
@@ -15,9 +16,8 @@ class TrackRepository extends EntityRepository
             'year' => 't.year',
         ];
 
-        $direction = $request->query->get('direction') ?: 'ASC';
-        $perPage = $request->query->get('per_page') ?: $pageSize;
-        $page = $request->query->get('page') ? $request->query->get('page') - 1 : 0;
+        $perPage = (int)$request->query->get('per_page') ?: $pageSize;
+        $page = (int)$request->query->get('page') ? $request->query->get('page') - 1 : 0;
 
         $query = $this->getEntityManager()
             ->createQueryBuilder()
@@ -33,13 +33,18 @@ class TrackRepository extends EntityRepository
             }
         }
 
-        if ($sort = $request->query->get('sort')) {
+        if ($sort) {
             $query->orderBy($sort, $direction);
         };
 
-        return $query->getQuery()
+        $result = $query->getQuery()
             ->setMaxResults($perPage)
             ->setFirstResult($perPage * $page)
             ->getResult();
+
+        return [
+            'code' => 200,
+            'content' => $result,
+        ];
     }
 }
